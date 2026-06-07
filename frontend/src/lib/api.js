@@ -10,11 +10,11 @@ function authUrl(pad) {
 }
 
 // Auth
-export async function registreren(gebruikersnaam, wachtwoord, rol, naam) {
+export async function registreren(gebruikersnaam, wachtwoord, naam) {
     const res = await fetch(`${BASE}/registreren`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gebruikersnaam, wachtwoord, rol, naam }),
+        body: JSON.stringify({ gebruikersnaam, wachtwoord, naam }),
     });
     return res.json();
 }
@@ -36,6 +36,15 @@ export async function getMedewerkers() {
 
 export async function verwijderMedewerker(id) {
     const res = await fetch(authUrl(`/medewerkers/${id}`), { method: 'DELETE' });
+    return res.json();
+}
+
+export async function updateMedewerkerRol(id, rol) {
+    const res = await fetch(authUrl(`/medewerkers/${id}/rol`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rol }),
+    });
     return res.json();
 }
 

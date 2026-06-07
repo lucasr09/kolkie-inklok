@@ -12,8 +12,12 @@ pub struct Gebruiker {
 pub struct RegistrerenBody {
     pub gebruikersnaam: String,
     pub wachtwoord: String,
+    pub naam: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RolUpdateBody {
     pub rol: String,
-    pub naam: String, // naam voor medewerkers tabel
 }
 
 #[derive(Debug, Serialize, Deserialize)]

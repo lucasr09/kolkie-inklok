@@ -2,6 +2,7 @@ use rocket::serde::json::Json;
 use rocket::http::Status;
 use crate::db::verbinding;
 use crate::models::{RegistrerenBody, InloggenBody, Gebruiker};
+
 use bcrypt::{hash, verify, DEFAULT_COST};
 use uuid::Uuid;
 use chrono::Local;
@@ -36,19 +37,14 @@ pub fn check_auth(token: Option<&str>, vereiste_rol: Option<&str>) -> Result<Geb
 
 #[post("/registreren", data = "<body>")]
 pub fn registreren(body: Json<RegistrerenBody>) -> (Status, Json<serde_json::Value>) {
-    // Valideer rol
-    if body.rol != "werknemer" && body.rol != "manager" {
-        return (Status::BadRequest, Json(serde_json::json!({
-            "status": "fout", "bericht": "Rol moet 'werknemer' of 'manager' zijn"
-        })));
-    }
+    // Nieuwe accounts zijn altijd werknemer — alleen managers kunnen anderen promoveren
+    let rol = "werknemer";
 
     let conn = match verbinding() {
         Ok(c) => c,
         Err(_) => return (Status::InternalServerError, Json(serde_json::json!({ "status": "fout" }))),
     };
 
-    // Check of gebruikersnaam al bestaat
     let bestaat: bool = conn.query_row(
         "SELECT COUNT(*) FROM gebruikers WHERE gebruikersnaam = ?1",
         [&body.gebruikersnaam],
@@ -61,23 +57,20 @@ pub fn registreren(body: Json<RegistrerenBody>) -> (Status, Json<serde_json::Val
         })));
     }
 
-    // Hash wachtwoord
     let hash = match hash(&body.wachtwoord, DEFAULT_COST) {
         Ok(h) => h,
         Err(_) => return (Status::InternalServerError, Json(serde_json::json!({ "status": "fout" }))),
     };
 
-    // Maak medewerker aan
     conn.execute(
         "INSERT INTO medewerkers (naam, rol) VALUES (?1, ?2)",
-        (&body.naam, &body.rol),
+        (&body.naam, rol),
     ).unwrap();
     let medewerker_id = conn.last_insert_rowid();
 
-    // Maak gebruiker aan
     conn.execute(
         "INSERT INTO gebruikers (gebruikersnaam, wachtwoord_hash, rol, medewerker_id) VALUES (?1, ?2, ?3, ?4)",
-        (&body.gebruikersnaam, &hash, &body.rol, medewerker_id),
+        (&body.gebruikersnaam, &hash, rol, medewerker_id),
     ).unwrap();
 
     (Status::Ok, Json(serde_json::json!({ "status": "ok" })))

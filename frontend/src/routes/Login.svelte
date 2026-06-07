@@ -2,11 +2,10 @@
   import { inloggen, registreren } from '../lib/api.js';
   import { sessie } from '../stores.js';
 
-  let modus = 'inloggen'; // 'inloggen' | 'registreren'
+  let modus = 'inloggen';
   let gebruikersnaam = '';
   let wachtwoord = '';
   let naam = '';
-  let rol = 'werknemer';
   let fout = '';
   let laden = false;
 
@@ -17,7 +16,7 @@
     const res = await inloggen(gebruikersnaam, wachtwoord);
     laden = false;
     if (res.status === 'ok') {
-      sessie.set({ token: res.token, rol: res.rol, gebruikersnaam: res.gebruikersnaam, medewerker_id: res.medewerker_id, naam });
+      sessie.set({ token: res.token, rol: res.rol, gebruikersnaam: res.gebruikersnaam, medewerker_id: res.medewerker_id });
     } else {
       fout = res.bericht || 'Inloggen mislukt';
     }
@@ -25,15 +24,15 @@
 
   async function handleRegistreren() {
     if (!gebruikersnaam || !wachtwoord || !naam) { fout = 'Vul alle velden in'; return; }
+    if (wachtwoord.length < 6) { fout = 'Wachtwoord moet minimaal 6 tekens zijn'; return; }
     laden = true;
     fout = '';
-    const res = await registreren(gebruikersnaam, wachtwoord, rol, naam);
+    const res = await registreren(gebruikersnaam, wachtwoord, naam);
     laden = false;
     if (res.status === 'ok') {
-      // Direct inloggen na registreren
       const login = await inloggen(gebruikersnaam, wachtwoord);
       if (login.status === 'ok') {
-        sessie.set({ token: login.token, rol: login.rol, gebruikersnaam: login.gebruikersnaam, medewerker_id: login.medewerker_id, naam });
+        sessie.set({ token: login.token, rol: login.rol, gebruikersnaam: login.gebruikersnaam, medewerker_id: login.medewerker_id });
       }
     } else {
       fout = res.bericht || 'Registreren mislukt';
@@ -41,13 +40,13 @@
   }
 </script>
 
-<div class="login-wrapper">
+<div class="achtergrond">
   <div class="login-kaart">
     <div class="login-logo">
-      <span class="logo-icoon">🍟</span>
-      <div>
+      <div class="logo-cirkel">🍟</div>
+      <div class="logo-teksten">
         <div class="logo-naam">Kolkie</div>
-        <div class="logo-sub">Cafetaria</div>
+        <div class="logo-sub">Cafetaria · Personeelssysteem</div>
       </div>
     </div>
 
@@ -56,67 +55,60 @@
         Inloggen
       </button>
       <button class:actief={modus === 'registreren'} on:click={() => { modus = 'registreren'; fout = ''; }}>
-        Account aanmaken
+        Nieuw account
       </button>
     </div>
 
     {#if fout}
-      <div class="fout-bericht">{fout}</div>
+      <div class="fout-bericht">
+        <span class="fout-icoon">!</span>
+        {fout}
+      </div>
     {/if}
 
     {#if modus === 'inloggen'}
       <div class="form">
         <label class="form-veld">
           <span class="veld-label">Gebruikersnaam</span>
-          <input bind:value={gebruikersnaam} placeholder="jouw gebruikersnaam" on:keydown={(e) => e.key === 'Enter' && handleInloggen()} />
+          <input bind:value={gebruikersnaam} placeholder="bijv. jan.devries" on:keydown={(e) => e.key === 'Enter' && handleInloggen()} autocomplete="username" />
         </label>
         <label class="form-veld">
           <span class="veld-label">Wachtwoord</span>
-          <input type="password" bind:value={wachtwoord} placeholder="••••••••" on:keydown={(e) => e.key === 'Enter' && handleInloggen()} />
+          <input type="password" bind:value={wachtwoord} placeholder="••••••••" on:keydown={(e) => e.key === 'Enter' && handleInloggen()} autocomplete="current-password" />
         </label>
-        <button class="knop-inloggen" on:click={handleInloggen} disabled={laden}>
-          {laden ? 'Bezig...' : 'Inloggen →'}
+        <button class="knop-submit" on:click={handleInloggen} disabled={laden}>
+          {#if laden}
+            <span class="spinner"></span> Bezig...
+          {:else}
+            Inloggen →
+          {/if}
         </button>
       </div>
+      <p class="hint">Standaard admin: <strong>admin</strong> / <strong>admin123</strong></p>
     {:else}
       <div class="form">
         <label class="form-veld">
           <span class="veld-label">Volledige naam</span>
-          <input bind:value={naam} placeholder="bijv. Jan de Vries" />
+          <input bind:value={naam} placeholder="bijv. Jan de Vries" autocomplete="name" />
         </label>
         <label class="form-veld">
           <span class="veld-label">Gebruikersnaam</span>
-          <input bind:value={gebruikersnaam} placeholder="jouw gebruikersnaam" />
+          <input bind:value={gebruikersnaam} placeholder="bijv. jan.devries" autocomplete="username" />
         </label>
         <label class="form-veld">
           <span class="veld-label">Wachtwoord</span>
-          <input type="password" bind:value={wachtwoord} placeholder="minimaal 6 tekens" />
+          <input type="password" bind:value={wachtwoord} placeholder="minimaal 6 tekens" autocomplete="new-password" />
         </label>
-        <label class="form-veld">
-          <span class="veld-label">Rol</span>
-          <div class="rol-keuze">
-            <button
-              class="rol-knop"
-              class:actief={rol === 'werknemer'}
-              on:click={() => rol = 'werknemer'}
-            >
-              <span class="rol-icoon">👤</span>
-              <span class="rol-naam">Werknemer</span>
-              <span class="rol-omschrijving">Inklokken & rooster bekijken</span>
-            </button>
-            <button
-              class="rol-knop"
-              class:actief={rol === 'manager'}
-              on:click={() => rol = 'manager'}
-            >
-              <span class="rol-icoon">⭐</span>
-              <span class="rol-naam">Manager</span>
-              <span class="rol-omschrijving">Alles beheren</span>
-            </button>
-          </div>
-        </label>
-        <button class="knop-inloggen" on:click={handleRegistreren} disabled={laden}>
-          {laden ? 'Bezig...' : 'Account aanmaken →'}
+        <div class="rol-info">
+          <span class="rol-icoon">👤</span>
+          <span>Nieuw account wordt aangemaakt als <strong>Werknemer</strong>. Een manager kan je daarna promoveren.</span>
+        </div>
+        <button class="knop-submit" on:click={handleRegistreren} disabled={laden}>
+          {#if laden}
+            <span class="spinner"></span> Bezig...
+          {:else}
+            Account aanmaken →
+          {/if}
         </button>
       </div>
     {/if}
@@ -124,61 +116,91 @@
 </div>
 
 <style>
-  .login-wrapper {
+  .achtergrond {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--achtergrond);
+    background: linear-gradient(135deg, #1a1208 0%, #2e2210 50%, #3d2d14 100%);
     padding: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .achtergrond::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(245,197,24,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(224,31,31,0.06) 0%, transparent 50%);
+    pointer-events: none;
   }
 
   .login-kaart {
-    background: var(--wit);
-    border-radius: 20px;
-    border: 1.5px solid var(--rand);
-    padding: 2.5rem 2rem;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 2.5rem 2.25rem;
     width: 100%;
     max-width: 420px;
-    box-shadow: var(--schaduw-groot);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+    position: relative;
+    z-index: 1;
   }
 
   .login-logo {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
     margin-bottom: 2rem;
     justify-content: center;
   }
-  .logo-icoon { font-size: 2.5rem; }
+
+  .logo-cirkel {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #f5c518, #e8a800);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    box-shadow: 0 4px 12px rgba(245,197,24,0.35);
+    flex-shrink: 0;
+  }
+
+  .logo-teksten { display: flex; flex-direction: column; }
+
   .logo-naam {
     font-family: var(--font-display);
-    font-size: 2rem;
+    font-size: 2.2rem;
     color: var(--donker);
     letter-spacing: 0.06em;
     line-height: 1;
   }
+
   .logo-sub {
     font-size: 0.65rem;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--tekst-zacht);
+    margin-top: 2px;
   }
 
   .tabbladen {
     display: flex;
     background: #f3f4f6;
-    border-radius: 10px;
-    padding: 0.25rem;
+    border-radius: 12px;
+    padding: 0.3rem;
     margin-bottom: 1.75rem;
     gap: 0.25rem;
   }
+
   .tabbladen button {
     flex: 1;
     background: none;
     border: none;
-    padding: 0.55rem;
-    border-radius: 8px;
+    padding: 0.6rem;
+    border-radius: 9px;
     font-family: var(--font-body);
     font-weight: 700;
     font-size: 0.9rem;
@@ -186,83 +208,119 @@
     color: var(--tekst-zacht);
     transition: all 0.15s;
   }
+
   .tabbladen button.actief {
     background: var(--wit);
     color: var(--donker);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.12);
   }
 
   .fout-bericht {
-    background: var(--rood-licht);
-    color: var(--rood-donker);
-    border: 1.5px solid #f5c6c6;
-    border-radius: 8px;
-    padding: 0.65rem 1rem;
-    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #fff0f0;
+    color: #b81515;
+    border: 1.5px solid #fca5a5;
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    font-size: 0.88rem;
     font-weight: 600;
     margin-bottom: 1rem;
   }
 
-  .form { display: flex; flex-direction: column; gap: 1rem; }
+  .fout-icoon {
+    width: 20px;
+    height: 20px;
+    background: #b81515;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .form { display: flex; flex-direction: column; gap: 1.1rem; }
 
   .form-veld {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.4rem;
   }
 
   .veld-label {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 700;
     color: var(--tekst-zacht);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
   }
 
-  .rol-keuze {
+  .rol-info {
     display: flex;
-    gap: 0.5rem;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: #fffbea;
+    border: 1.5px solid #fde68a;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: #78350f;
+    line-height: 1.4;
   }
 
-  .rol-knop {
-    flex: 1;
-    background: var(--wit);
-    border: 2px solid var(--rand);
-    border-radius: var(--radius);
-    padding: 0.75rem;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.2rem;
-    transition: border-color 0.15s, background 0.15s;
-    font-family: var(--font-body);
-  }
-  .rol-knop.actief {
-    border-color: var(--rood);
-    background: var(--rood-licht);
-  }
-  .rol-icoon { font-size: 1.4rem; }
-  .rol-naam { font-weight: 700; font-size: 0.85rem; color: var(--donker); }
-  .rol-omschrijving { font-size: 0.7rem; color: var(--tekst-zacht); text-align: center; }
+  .rol-icoon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
 
-  .knop-inloggen {
+  .knop-submit {
     width: 100%;
-    padding: 0.9rem;
-    background: var(--rood);
+    padding: 0.95rem;
+    background: linear-gradient(135deg, #e01f1f, #c01515);
     color: white;
     border: none;
-    border-radius: var(--radius);
+    border-radius: 12px;
     font-family: var(--font-display);
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     letter-spacing: 0.06em;
     cursor: pointer;
-    transition: background 0.15s, transform 0.1s;
-    margin-top: 0.5rem;
+    transition: all 0.15s;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(224,31,31,0.3);
   }
-  .knop-inloggen:hover:not(:disabled) {
-    background: var(--rood-donker);
+
+  .knop-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #c01515, #a01010);
     transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(224,31,31,0.4);
   }
-  .knop-inloggen:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .knop-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: draaien 0.7s linear infinite;
+  }
+
+  @keyframes draaien { to { transform: rotate(360deg); } }
+
+  .hint {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--tekst-zacht);
+    margin-top: 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    .login-kaart { padding: 2rem 1.5rem; border-radius: 20px; }
+  }
 </style>

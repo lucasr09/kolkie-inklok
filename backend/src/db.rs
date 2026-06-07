@@ -1,4 +1,5 @@
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result, params};
+use bcrypt::{hash, DEFAULT_COST};
 
 pub fn verbinding() -> Result<Connection> {
     Connection::open("kolkie.db")
@@ -46,5 +47,27 @@ pub fn init() -> Result<()> {
             FOREIGN KEY (medewerker_id) REFERENCES medewerkers(id)
         );
     ")?;
+
+    // Seed standaard admin als er nog geen manager-account bestaat
+    let manager_count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM gebruikers WHERE rol = 'manager'",
+        [],
+        |row| row.get(0),
+    ).unwrap_or(0);
+
+    if manager_count == 0 {
+        let wachtwoord_hash = hash("admin123", DEFAULT_COST)
+            .expect("Wachtwoord hashen mislukt");
+        conn.execute(
+            "INSERT INTO medewerkers (naam, rol) VALUES ('Admin', 'manager')",
+            [],
+        )?;
+        let medewerker_id = conn.last_insert_rowid();
+        conn.execute(
+            "INSERT INTO gebruikers (gebruikersnaam, wachtwoord_hash, rol, medewerker_id) VALUES ('admin', ?1, 'manager', ?2)",
+            params![wachtwoord_hash, medewerker_id],
+        )?;
+    }
+
     Ok(())
 }

@@ -10,6 +10,7 @@ pub fn alle_routes() -> Vec<rocket::Route> {
         auth::uitloggen,
         medewerkers::get_medewerkers_auth,
         medewerkers::delete_medewerker,
+        medewerkers::update_medewerker_rol,
         klokken::inklokken,
         klokken::uitklokken,
         klokken::get_klokslagen,
