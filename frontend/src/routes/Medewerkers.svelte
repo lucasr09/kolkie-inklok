@@ -50,8 +50,8 @@
   <div class="pagina-header">
     <h1>Team beheer</h1>
     <div class="teller-badges">
-      <span class="badge badge-manager">⭐ {managers.length} manager{managers.length !== 1 ? 's' : ''}</span>
-      <span class="badge badge-werknemer">👤 {werknemers.length} werknemer{werknemers.length !== 1 ? 's' : ''}</span>
+      <span class="badge badge-manager">{managers.length} manager{managers.length !== 1 ? 's' : ''}</span>
+      <span class="badge badge-werknemer">{werknemers.length} werknemer{werknemers.length !== 1 ? 's' : ''}</span>
     </div>
   </div>
 
@@ -67,7 +67,7 @@
           <div class="team-avatar" style="background: {avatarKleur(m.id ?? 0)}">{m.naam[0].toUpperCase()}</div>
           <div class="team-info">
             <span class="team-naam">{m.naam}</span>
-            <span class="team-rol manager-badge">⭐ Manager</span>
+            <span class="team-rol manager-badge">Manager</span>
           </div>
           <div class="acties">
             {#if bevestigVerwijder === m.id}
@@ -101,7 +101,7 @@
           <div class="team-avatar" style="background: {avatarKleur(m.id ?? 0)}">{m.naam[0].toUpperCase()}</div>
           <div class="team-info">
             <span class="team-naam">{m.naam}</span>
-            <span class="team-rol">👤 Werknemer</span>
+            <span class="team-rol">Werknemer</span>
           </div>
           <div class="acties">
             {#if bevestigVerwijder === m.id}

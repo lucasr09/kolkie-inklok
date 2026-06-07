@@ -206,7 +206,7 @@
           <div class="na-avatar" style="background: {avatarKleur(p.medewerker_id)}">{p.naam[0]}</div>
           <div class="na-tekst">
             <span class="na-naam">{p.naam}</span>
-            <span class="na-sub">{p.pauze_start ? '☕ Pauze' : `Sinds ${tijdStr(p.ingeklokt_op)}`}</span>
+            <span class="na-sub">{p.pauze_start ? 'Pauze' : `Sinds ${tijdStr(p.ingeklokt_op)}`}</span>
           </div>
         </div>
       {/each}
@@ -252,7 +252,6 @@
   </div>
 {:else if weekData.length === 0}
   <div class="leeg-staat">
-    <div class="leeg-icoon">📊</div>
     <div class="leeg-titel">Geen data voor deze week</div>
     <div class="leeg-sub">Er zijn geen klokslagen of geplande shifts in deze periode.</div>
   </div>
@@ -265,7 +264,7 @@
           <div class="med-avatar" style="background: {avatarKleur(med.id)}">{med.naam[0]}</div>
           <div class="med-info">
             <span class="med-naam">{med.naam}</span>
-            <span class="med-rol-label">{med.rol === 'manager' ? '⭐ Manager' : '👤 Werknemer'}</span>
+            <span class="med-rol-label">{med.rol === 'manager' ? 'Manager' : 'Werknemer'}</span>
           </div>
           <div class="uren-stats">
             <div class="stat-blok">
@@ -309,7 +308,7 @@
                   {/each}
                 {/if}
                 {#if dagBeschikbaar}
-                  <span class="tijd-chip beschikbaar">✓ {dagBeschikbaar.hele_dag ? 'Hele dag' : `${dagBeschikbaar.van_tijd}–${dagBeschikbaar.tot_tijd}`}</span>
+                  <span class="tijd-chip beschikbaar">{dagBeschikbaar.hele_dag ? 'Hele dag' : `${dagBeschikbaar.van_tijd}–${dagBeschikbaar.tot_tijd}`}</span>
                 {/if}
                 {#if dagRooster.length === 0 && !dagBeschikbaar}
                   <span class="geen-data">—</span>

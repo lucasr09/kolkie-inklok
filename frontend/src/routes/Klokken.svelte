@@ -116,7 +116,7 @@
         <button class="medewerker-knop" on:click={() => kiesMedewerker(m.id, m.naam)}>
           <div class="avatar" style="background: {avatarKleur(m.id)}">{m.naam[0].toUpperCase()}</div>
           <span class="med-naam">{m.naam}</span>
-          <span class="med-rol">{m.rol === 'manager' ? '⭐ Manager' : '👤 Werknemer'}</span>
+          <span class="med-rol">{m.rol === 'manager' ? 'Manager' : 'Werknemer'}</span>
         </button>
       {/each}
     </div>
@@ -134,7 +134,7 @@
                 <span class="na-tijd">Ingeklokt {formatTijd(p.ingeklokt_op)}</span>
               </div>
               {#if p.pauze_start}
-                <span class="na-badge pauze">☕ Pauze</span>
+                <span class="na-badge pauze">Pauze</span>
               {:else}
                 <span class="na-badge bezig">Bezig</span>
               {/if}
@@ -197,7 +197,13 @@
         <div class="knop-spinner"></div>
         <span>Bezig...</span>
       {:else}
-        <div class="klok-knop-icoon">{ingeklokt ? '⏹' : '▶'}</div>
+        <div class="klok-knop-icoon">
+          {#if ingeklokt}
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+          {:else}
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"/></svg>
+          {/if}
+        </div>
         <span class="klok-knop-tekst">{ingeklokt ? 'Uitklokken' : 'Inklokken'}</span>
       {/if}
     </button>
@@ -206,9 +212,9 @@
     {#if ingeklokt}
       <button class="pauze-knop" class:stoppen={opPauze} on:click={handlePauze} disabled={laden}>
         {#if opPauze}
-          ▶ Pauze beëindigen
+          Pauze beëindigen
         {:else}
-          ☕ Pauze nemen
+          Pauze nemen
         {/if}
       </button>
     {/if}
@@ -216,7 +222,7 @@
     <!-- Feedback bericht -->
     {#if bericht}
       <div class="bericht" class:ok={berichtType === 'ok'} class:fout={berichtType === 'fout'}>
-        {berichtType === 'ok' ? '✓' : '!'} {bericht}
+        {bericht}
       </div>
     {/if}
 
@@ -518,7 +524,7 @@
   .klok-knop:active:not(:disabled) { transform: translateY(0); }
   .klok-knop:disabled { opacity: 0.7; cursor: not-allowed; }
 
-  .klok-knop-icoon { font-size: 1.8rem; line-height: 1; }
+  .klok-knop-icoon { line-height: 1; display: flex; align-items: center; }
   .klok-knop-tekst { font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.08em; }
 
   .knop-spinner {

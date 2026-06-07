@@ -99,7 +99,6 @@
           <input type="password" bind:value={wachtwoord} placeholder="minimaal 6 tekens" autocomplete="new-password" />
         </label>
         <div class="rol-info">
-          <span class="rol-icoon">👤</span>
           <span>Nieuw account wordt aangemaakt als <strong>Werknemer</strong>. Een manager kan je daarna promoveren.</span>
         </div>
         <button class="knop-submit" on:click={handleRegistreren} disabled={laden}>
@@ -271,7 +270,6 @@
     line-height: 1.4;
   }
 
-  .rol-icoon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
 
   .knop-submit {
     width: 100%;

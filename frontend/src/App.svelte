@@ -99,7 +99,7 @@
             <div class="gebruiker-info">
               <span class="gebruiker-naam">{$sessie.gebruikersnaam}</span>
               <span class="gebruiker-rol" class:manager={$sessie.rol === 'manager'}>
-                {$sessie.rol === 'manager' ? '⭐ Manager' : '👤 Werknemer'}
+                {$sessie.rol === 'manager' ? 'Manager' : 'Werknemer'}
               </span>
             </div>
           </button>

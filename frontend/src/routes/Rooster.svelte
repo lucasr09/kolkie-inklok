@@ -148,10 +148,10 @@
           {#if entry === null}
             <span class="b-status grijs">Niet opgegeven</span>
           {:else if entry.status === 'onbeschikbaar'}
-            <span class="b-status rood">✕ Onbeschikbaar</span>
+            <span class="b-status rood">Onbeschikbaar</span>
           {:else}
             <span class="b-status groen">
-              ✓ {entry.hele_dag ? 'Hele dag' : `${entry.van_tijd}–${entry.tot_tijd}`}
+              {entry.hele_dag ? 'Hele dag' : `${entry.van_tijd}–${entry.tot_tijd}`}
             </span>
             {#if entry.gewenste_functie}
               <span class="gewenste-functie-chip">{entry.gewenste_functie}</span>
@@ -171,7 +171,6 @@
 <!-- Shifts van de dag -->
 {#if dagShifts.length === 0}
   <div class="leeg-staat">
-    <div class="leeg-icoon">📭</div>
     <div class="leeg-titel">Niemand ingepland</div>
     <div class="leeg-sub">Er zijn geen shifts op deze dag{$isManager ? ' — voeg er een toe hieronder' : ''}.</div>
   </div>
@@ -422,7 +421,6 @@
     background: var(--wit); border-radius: var(--radius-lg);
     border: 1.5px dashed var(--rand); margin-bottom: 2rem;
   }
-  .leeg-icoon { font-size: 2.5rem; }
   .leeg-titel { font-weight: 800; font-size: 1rem; color: var(--donker); }
   .leeg-sub { font-size: 0.85rem; color: var(--tekst-zacht); max-width: 260px; }
 

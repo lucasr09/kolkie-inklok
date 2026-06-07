@@ -90,7 +90,6 @@
   <!-- Formulier -->
   <div class="form-kaart kaart">
     <div class="form-titel">
-      <span class="form-icoon">📅</span>
       <span>Beschikbaarheid opgeven</span>
     </div>
 
@@ -156,7 +155,7 @@
           </div>
         {:else}
           <div class="hele-dag-preview">
-            <span>☀ Beschikbaar de hele dag (08:30 – 23:00)</span>
+            <span>Hele dag beschikbaar (08:30 – 23:00)</span>
           </div>
         {/if}
         <div class="b-veld">
@@ -182,7 +181,7 @@
 
       {#if bBericht}
         <div class="b-melding" class:ok={bBerichtType === 'ok'} class:fout={bBerichtType === 'fout'}>
-          {bBerichtType === 'ok' ? '✓' : '!'} {bBericht}
+          {bBericht}
         </div>
       {/if}
     </div>
@@ -198,7 +197,6 @@
       </div>
     {:else if mijnBeschikbaarheid.length === 0}
       <div class="leeg-staat kaart">
-        <div class="leeg-icoon">📋</div>
         <div class="leeg-titel">Nog niets opgegeven</div>
         <div class="leeg-sub">Geef aan wanneer je beschikbaar bent, zodat de manager je kan inplannen.</div>
       </div>
@@ -217,9 +215,9 @@
               <div class="b-datum-tekst">{formatDatum(b.datum)}</div>
               <div class="b-item-footer">
                 {#if b.status === 'onbeschikbaar'}
-                  <span class="b-chip rood-chip">✕ Onbeschikbaar</span>
+                  <span class="b-chip rood-chip">Onbeschikbaar</span>
                 {:else}
-                  <span class="b-chip">{b.hele_dag ? '☀ Hele dag' : `${b.van_tijd} – ${b.tot_tijd}`}</span>
+                  <span class="b-chip">{b.hele_dag ? 'Hele dag' : `${b.van_tijd} – ${b.tot_tijd}`}</span>
                   {#if b.gewenste_functie}
                     <span class="b-chip functie-chip">{b.gewenste_functie}</span>
                   {/if}
@@ -243,7 +241,7 @@
           {#each verledenBeschikbaarheid as b}
             <div class="b-item verleden">
               <div class="b-datum-tekst">{formatDatum(b.datum)}</div>
-              <span class="b-chip verleden-chip">{b.hele_dag ? '☀ Hele dag' : `${b.van_tijd} – ${b.tot_tijd}`}</span>
+              <span class="b-chip verleden-chip">{b.hele_dag ? 'Hele dag' : `${b.van_tijd} – ${b.tot_tijd}`}</span>
             </div>
           {/each}
         </div>
@@ -283,7 +281,6 @@
     margin-bottom: 1.5rem;
   }
 
-  .form-icoon { font-size: 1.25rem; }
 
   .b-form { display: flex; flex-direction: column; gap: 1rem; }
 
@@ -513,7 +510,6 @@
     padding: 3rem 2rem;
     text-align: center;
   }
-  .leeg-icoon { font-size: 2.5rem; }
   .leeg-titel { font-weight: 800; color: var(--donker); }
   .leeg-sub { font-size: 0.85rem; color: var(--tekst-zacht); max-width: 280px; }
 

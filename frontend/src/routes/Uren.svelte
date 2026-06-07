@@ -111,7 +111,6 @@
 <!-- Klokslagen -->
 {#if gefilterd.length === 0}
   <div class="leeg-staat">
-    <div class="leeg-icoon">🕐</div>
     <div class="leeg-titel">Geen klokslagen gevonden</div>
     <div class="leeg-sub">Er zijn nog geen klokslagen{filterMedewerker ? ' voor deze medewerker' : ''}.</div>
   </div>
@@ -270,7 +269,7 @@
     margin-bottom: 2rem;
   }
 
-  .leeg-icoon { font-size: 2.5rem; }
+
   .leeg-titel { font-weight: 800; color: var(--donker); }
   .leeg-sub { font-size: 0.85rem; color: var(--tekst-zacht); }
 
