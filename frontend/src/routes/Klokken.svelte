@@ -92,6 +92,7 @@
   $: liveDatum = nu.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 </script>
 
+{#if gekozenId}
 <!-- ── Klok scherm ── -->
   <div class="klok-wrapper">
 
@@ -201,6 +202,7 @@
 
 
   </div>
+{/if}
 
 <style>
   /* ── Klok scherm ── */
