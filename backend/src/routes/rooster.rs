@@ -2,6 +2,7 @@ use rocket::serde::json::Json;
 use rocket::http::Status;
 use crate::db::verbinding;
 use crate::models::{RoosterRegel, NieuweRoosterRegel};
+use rusqlite::params;
 use crate::routes::auth::check_auth;
 
 #[get("/rooster?<token>")]
@@ -11,10 +12,10 @@ pub fn get_rooster(token: Option<String>) -> (Status, Json<serde_json::Value>) {
     }
     let conn = verbinding().unwrap();
     let mut stmt = conn.prepare(
-        "SELECT id, medewerker_id, datum, start_tijd, eind_tijd FROM rooster ORDER BY datum, start_tijd"
+        "SELECT id, medewerker_id, datum, start_tijd, eind_tijd, functie FROM rooster ORDER BY datum, start_tijd"
     ).unwrap();
     let regels: Vec<RoosterRegel> = stmt.query_map([], |row| {
-        Ok(RoosterRegel { id: row.get(0)?, medewerker_id: row.get(1)?, datum: row.get(2)?, start_tijd: row.get(3)?, eind_tijd: row.get(4).ok() })
+        Ok(RoosterRegel { id: row.get(0)?, medewerker_id: row.get(1)?, datum: row.get(2)?, start_tijd: row.get(3)?, eind_tijd: row.get(4).ok().flatten(), functie: row.get(5).ok().flatten() })
     }).unwrap().filter_map(|r| r.ok()).collect();
     (Status::Ok, Json(serde_json::json!(regels)))
 }
@@ -26,8 +27,8 @@ pub fn post_rooster(token: Option<String>, body: Json<NieuweRoosterRegel>) -> (S
     }
     let conn = verbinding().unwrap();
     conn.execute(
-        "INSERT INTO rooster (medewerker_id, datum, start_tijd, eind_tijd) VALUES (?1, ?2, ?3, ?4)",
-        (&body.medewerker_id, &body.datum, &body.start_tijd, &body.eind_tijd),
+        "INSERT INTO rooster (medewerker_id, datum, start_tijd, eind_tijd, functie) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![&body.medewerker_id, &body.datum, &body.start_tijd, &body.eind_tijd, &body.functie],
     ).unwrap();
     (Status::Ok, Json(serde_json::json!({ "status": "ok" })))
 }

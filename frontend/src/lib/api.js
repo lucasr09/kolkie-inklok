@@ -158,3 +158,23 @@ export async function verwijderRoosterRegel(id) {
     const res = await fetch(authUrl(`/rooster/${id}`), { method: 'DELETE' });
     return res.json();
 }
+
+// Beschikbaarheid
+export async function getBeschikbaarheid() {
+    const res = await fetch(authUrl('/beschikbaarheid'));
+    return res.json();
+}
+
+export async function setBeschikbaarheid(data) {
+    const res = await fetch(authUrl('/beschikbaarheid'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    return res.json();
+}
+
+export async function verwijderBeschikbaarheid(id) {
+    const res = await fetch(authUrl(`/beschikbaarheid/${id}`), { method: 'DELETE' });
+    return res.json();
+}

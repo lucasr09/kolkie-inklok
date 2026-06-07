@@ -1,11 +1,12 @@
 <script>
   import { onMount } from 'svelte';
-  import { getAlleKlokslagen, getRooster, getMedewerkers, getNuIngeklokt } from '../lib/api.js';
+  import { getAlleKlokslagen, getRooster, getMedewerkers, getNuIngeklokt, getBeschikbaarheid } from '../lib/api.js';
 
   let klokslagen = [];
   let rooster = [];
   let medewerkers = [];
   let nuAanwezig = [];
+  let beschikbaarheid = [];
   let gekozenWeek = huidigeMaandag();
   let laden = true;
 
@@ -36,7 +37,9 @@
     gekozenWeek = d;
   }
 
-  function datumStr(d) { return d.toISOString().split('T')[0]; }
+  function datumStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
 
   function formatWeek(maandag) {
     const zondag = weekZondag(maandag);
@@ -46,8 +49,8 @@
   $: isHuidigeWeek = datumStr(gekozenWeek) === datumStr(huidigeMaandag());
 
   onMount(async () => {
-    [klokslagen, rooster, medewerkers, nuAanwezig] = await Promise.all([
-      getAlleKlokslagen(), getRooster(), getMedewerkers(), getNuIngeklokt()
+    [klokslagen, rooster, medewerkers, nuAanwezig, beschikbaarheid] = await Promise.all([
+      getAlleKlokslagen(), getRooster(), getMedewerkers(), getNuIngeklokt(), getBeschikbaarheid()
     ]);
     laden = false;
   });
@@ -79,7 +82,7 @@
   }
 
   function tijdStr(isoStr) {
-    return new Date(isoStr).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    return new Date(isoStr).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', hour12: false });
   }
 
   function avatarKleur(id) {
@@ -108,6 +111,11 @@
       return r.medewerker_id === med.id && d >= maandag && d <= zondag;
     });
 
+    const weekBeschikbaar = beschikbaarheid.filter(b => {
+      const d = new Date(b.datum + 'T00:00:00');
+      return b.medewerker_id === med.id && d >= maandag && d <= zondag;
+    });
+
     const gewerktTotaalMs = weekKlokslagen.reduce((acc, k) => acc + gewerktMs(k), 0);
     const ingeplandTotaalMin = weekRooster.reduce((acc, r) => {
       const min = ingeplandMinuten(r);
@@ -131,13 +139,14 @@
         return min !== null ? acc + min : acc;
       }, 0);
       const dagVerschil = dagIngeplandMin > 0 ? Math.floor(dagGewerktMs / 60000) - dagIngeplandMin : null;
-      if (dagKlokslagen.length > 0 || dagRooster.length > 0) {
-        dagen.push({ ds, dag, dagKlokslagen, dagRooster, dagGewerktMs, dagIngeplandMin, dagVerschil });
+      const dagBeschikbaar = weekBeschikbaar.find(b => b.datum === ds) ?? null;
+      if (dagKlokslagen.length > 0 || dagRooster.length > 0 || dagBeschikbaar) {
+        dagen.push({ ds, dag, dagKlokslagen, dagRooster, dagGewerktMs, dagIngeplandMin, dagVerschil, dagBeschikbaar });
       }
     }
 
-    return { med, gewerktTotaalMs, ingeplandTotaalMin, verschilMin, heeftOpenKlokslag, dagen, weekKlokslagen, weekRooster };
-  }).filter(r => r.weekKlokslagen.length > 0 || r.weekRooster.length > 0);
+    return { med, gewerktTotaalMs, ingeplandTotaalMin, verschilMin, heeftOpenKlokslag, dagen, weekKlokslagen, weekRooster, weekBeschikbaar };
+  }).filter(r => r.weekKlokslagen.length > 0 || r.weekRooster.length > 0 || r.weekBeschikbaar.length > 0);
 
   function exporteerExcel() {
     const maandag = gekozenWeek;
@@ -290,7 +299,7 @@
             <span>Gewerkt</span>
             <span class="rechts">Verschil</span>
           </div>
-          {#each dagen as { ds, dag, dagKlokslagen, dagRooster, dagGewerktMs, dagIngeplandMin, dagVerschil }}
+          {#each dagen as { ds, dag, dagKlokslagen, dagRooster, dagGewerktMs, dagIngeplandMin, dagVerschil, dagBeschikbaar }}
             <div class="tabel-rij" class:rood={dagVerschil !== null && dagVerschil < -30} class:groen={dagVerschil !== null && dagVerschil >= 0}>
               <span class="dag-naam-cel">{dag.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
               <div class="dag-cel">
@@ -298,7 +307,11 @@
                   {#each dagRooster as r}
                     <span class="tijd-chip blauw">{r.start_tijd}–{r.eind_tijd ?? '?'}</span>
                   {/each}
-                {:else}
+                {/if}
+                {#if dagBeschikbaar}
+                  <span class="tijd-chip beschikbaar">✓ {dagBeschikbaar.hele_dag ? 'Hele dag' : `${dagBeschikbaar.van_tijd}–${dagBeschikbaar.tot_tijd}`}</span>
+                {/if}
+                {#if dagRooster.length === 0 && !dagBeschikbaar}
                   <span class="geen-data">—</span>
                 {/if}
               </div>
@@ -673,6 +686,7 @@
 
   .blauw { background: var(--blauw-licht); color: var(--blauw); }
   .groen-chip { background: var(--groen-licht); color: var(--groen); }
+  .beschikbaar { background: #ecfdf5; color: #059669; border: 1px solid #6ee7b7; font-style: italic; }
 
   .verschil-chip {
     font-size: 0.75rem;

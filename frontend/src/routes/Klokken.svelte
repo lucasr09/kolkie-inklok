@@ -16,6 +16,8 @@
 
   let nu = new Date();
   let klokInterval;
+  let aanwezigInterval;
+
 
   const kleuren = ['#dc2626','#2563eb','#059669','#d97706','#7c3aed','#db2777'];
   function avatarKleur(id) { return kleuren[(id ?? 0) % kleuren.length]; }
@@ -26,13 +28,14 @@
       await kiesMedewerker($sessie.medewerker_id, $sessie.gebruikersnaam);
     }
     nuAanwezig = await getNuIngeklokt();
-    klokInterval = setInterval(async () => {
-      nu = new Date();
-      nuAanwezig = await getNuIngeklokt();
-    }, 30000);
+    klokInterval = setInterval(() => { nu = new Date(); }, 1000);
+    aanwezigInterval = setInterval(async () => { nuAanwezig = await getNuIngeklokt(); }, 30000);
   });
 
-  onDestroy(() => clearInterval(klokInterval));
+  onDestroy(() => {
+    clearInterval(klokInterval);
+    clearInterval(aanwezigInterval);
+  });
 
   async function kiesMedewerker(id, naam) {
     gekozenId = id;
@@ -86,14 +89,14 @@
   }
 
   function formatTijd(isoStr) {
-    return new Date(isoStr).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    return new Date(isoStr).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', hour12: false });
   }
 
   function formatDatum(isoStr) {
     return new Date(isoStr).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
-  $: liveTijd = nu.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  $: liveTijd = nu.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
   $: liveDatum = nu.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 </script>
 
@@ -251,6 +254,7 @@
         </div>
       </div>
     {/if}
+
 
   </div>
 {/if}

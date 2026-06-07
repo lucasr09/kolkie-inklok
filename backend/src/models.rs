@@ -66,6 +66,7 @@ pub struct RoosterRegel {
     pub datum: String,
     pub start_tijd: String,
     pub eind_tijd: Option<String>,
+    pub functie: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -74,4 +75,28 @@ pub struct NieuweRoosterRegel {
     pub datum: String,
     pub start_tijd: String,
     pub eind_tijd: Option<String>,
+    pub functie: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Beschikbaarheid {
+    pub id: i64,
+    pub medewerker_id: i64,
+    pub datum: String,
+    pub status: String,
+    pub hele_dag: bool,
+    pub van_tijd: Option<String>,
+    pub tot_tijd: Option<String>,
+    pub gewenste_functie: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NieuweBeschikbaarheid {
+    pub medewerker_id: i64,
+    pub datum: String,
+    pub status: String,
+    pub hele_dag: bool,
+    pub van_tijd: Option<String>,
+    pub tot_tijd: Option<String>,
+    pub gewenste_functie: Option<String>,
 }

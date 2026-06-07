@@ -48,11 +48,26 @@ pub fn init() -> Result<()> {
             eind_tijd TEXT,
             FOREIGN KEY (medewerker_id) REFERENCES medewerkers(id)
         );
+
+        CREATE TABLE IF NOT EXISTS beschikbaarheid (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            medewerker_id INTEGER NOT NULL,
+            datum TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'beschikbaar',
+            hele_dag INTEGER NOT NULL DEFAULT 0,
+            van_tijd TEXT,
+            tot_tijd TEXT,
+            FOREIGN KEY (medewerker_id) REFERENCES medewerkers(id),
+            UNIQUE(medewerker_id, datum)
+        );
     ")?;
 
-    // Migratie: pauze kolommen toevoegen aan bestaande databases
+    // Migraties voor bestaande databases
     let _ = conn.execute("ALTER TABLE klokslagen ADD COLUMN pauze_start TEXT", []);
     let _ = conn.execute("ALTER TABLE klokslagen ADD COLUMN pauze_totaal_ms INTEGER NOT NULL DEFAULT 0", []);
+    let _ = conn.execute("ALTER TABLE beschikbaarheid ADD COLUMN status TEXT NOT NULL DEFAULT 'beschikbaar'", []);
+    let _ = conn.execute("ALTER TABLE beschikbaarheid ADD COLUMN gewenste_functie TEXT", []);
+    let _ = conn.execute("ALTER TABLE rooster ADD COLUMN functie TEXT", []);
 
     // Seed standaard admin als er nog geen manager-account bestaat
     let manager_count: i64 = conn.query_row(

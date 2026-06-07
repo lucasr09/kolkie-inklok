@@ -7,6 +7,7 @@
   import Medewerkers from './routes/Medewerkers.svelte';
   import Uren from './routes/Uren.svelte';
   import Overzicht from './routes/Overzicht.svelte';
+  import Beschikbaarheid from './routes/Beschikbaarheid.svelte';
 
   let activePagina = 'klokken';
   let toonWachtwoordModal = false;
@@ -45,11 +46,12 @@
   }
 
   const navItems = [
-    { id: 'klokken',     label: 'Inklokken',  icon: '⏱',  managerOnly: false },
-    { id: 'rooster',     label: 'Rooster',    icon: '📅',  managerOnly: false },
-    { id: 'overzicht',   label: 'Overzicht',  icon: '📊',  managerOnly: true  },
-    { id: 'uren',        label: 'Uren',       icon: '🕐',  managerOnly: true  },
-    { id: 'medewerkers', label: 'Team',       icon: '👥',  managerOnly: true  },
+    { id: 'klokken',         label: 'Inklokken',    icon: '⏱',  managerOnly: false },
+    { id: 'beschikbaarheid', label: 'Beschikbaar',  icon: '📋',  managerOnly: false },
+    { id: 'rooster',         label: 'Rooster',      icon: '📅',  managerOnly: false },
+    { id: 'overzicht',       label: 'Overzicht',    icon: '📊',  managerOnly: true  },
+    { id: 'uren',            label: 'Uren',         icon: '🕐',  managerOnly: true  },
+    { id: 'medewerkers',     label: 'Team',         icon: '👥',  managerOnly: true  },
   ];
 </script>
 
@@ -117,6 +119,8 @@
       <div class="pagina-inhoud">
         {#if activePagina === 'klokken'}
           <Klokken />
+        {:else if activePagina === 'beschikbaarheid'}
+          <Beschikbaarheid />
         {:else if activePagina === 'rooster'}
           <Rooster />
         {:else if activePagina === 'overzicht' && $isManager}

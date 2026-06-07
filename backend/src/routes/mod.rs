@@ -2,6 +2,7 @@ pub mod auth;
 pub mod klokken;
 pub mod rooster;
 pub mod medewerkers;
+pub mod beschikbaarheid;
 
 pub fn alle_routes() -> Vec<rocket::Route> {
     rocket::routes![
@@ -25,5 +26,8 @@ pub fn alle_routes() -> Vec<rocket::Route> {
         rooster::get_rooster,
         rooster::post_rooster,
         rooster::delete_rooster,
+        beschikbaarheid::get_beschikbaarheid,
+        beschikbaarheid::post_beschikbaarheid,
+        beschikbaarheid::delete_beschikbaarheid,
     ]
 }

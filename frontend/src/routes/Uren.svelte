@@ -23,7 +23,13 @@
 
   function naarInput(isoStr) {
     if (!isoStr) return '';
-    return new Date(isoStr).toISOString().slice(0, 16);
+    const d = new Date(isoStr);
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${y}-${mo}-${day}T${h}:${min}`;
   }
 
   function naarIso(inputStr) {
@@ -73,7 +79,7 @@
 
   function formatDatumTijd(isoStr) {
     if (!isoStr) return '—';
-    return new Date(isoStr).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return new Date(isoStr).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
   }
 
   $: gefilterd = filterMedewerker
