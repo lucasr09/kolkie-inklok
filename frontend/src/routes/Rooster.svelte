@@ -83,7 +83,7 @@
   $: heeftBeschikbaarEntries = dagBeschikbaar.some(d => d.entry !== null);
 
   function inplannen(b) {
-    nieuw.medewerker_id = String(b.med.id);
+    nieuw.medewerker_id = b.med.id;
     if (b.entry && b.entry.status === 'beschikbaar') {
       if (!b.entry.hele_dag && b.entry.van_tijd) nieuw.start_tijd = b.entry.van_tijd;
       if (!b.entry.hele_dag && b.entry.tot_tijd) nieuw.eind_tijd = b.entry.tot_tijd;
@@ -97,7 +97,7 @@
     laden = true;
     await voegRoosterRegelToe({
       ...nieuw,
-      medewerker_id: Number(nieuw.medewerker_id),
+      medewerker_id: nieuw.medewerker_id,
       eind_tijd: nieuw.eind_tijd || null,
       functie: nieuw.functie || null,
     });
