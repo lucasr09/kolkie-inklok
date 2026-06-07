@@ -1,5 +1,6 @@
 <script>
   import { sessie, isManager } from './stores.js';
+  import { uitloggen as apiUitloggen, wijzigWachtwoord } from './lib/api.js';
   import Login from './routes/Login.svelte';
   import Klokken from './routes/Klokken.svelte';
   import Rooster from './routes/Rooster.svelte';
@@ -8,10 +9,39 @@
   import Overzicht from './routes/Overzicht.svelte';
 
   let activePagina = 'klokken';
+  let toonWachtwoordModal = false;
+  let huidigWachtwoord = '';
+  let nieuwWachtwoord = '';
+  let wachtwoordFout = '';
+  let wachtwoordSucces = false;
+  let wachtwoordLaden = false;
 
-  function uitloggen() {
+  async function uitloggen() {
+    await apiUitloggen();
     sessie.set(null);
     activePagina = 'klokken';
+  }
+
+  function openWachtwoordModal() {
+    toonWachtwoordModal = true;
+    huidigWachtwoord = '';
+    nieuwWachtwoord = '';
+    wachtwoordFout = '';
+    wachtwoordSucces = false;
+  }
+
+  async function handleWachtwoordWijzigen() {
+    if (!huidigWachtwoord || !nieuwWachtwoord) { wachtwoordFout = 'Vul beide velden in'; return; }
+    wachtwoordLaden = true;
+    wachtwoordFout = '';
+    const res = await wijzigWachtwoord(huidigWachtwoord, nieuwWachtwoord);
+    wachtwoordLaden = false;
+    if (res.status === 'ok') {
+      wachtwoordSucces = true;
+      setTimeout(() => { toonWachtwoordModal = false; }, 1500);
+    } else {
+      wachtwoordFout = res.bericht || 'Wijzigen mislukt';
+    }
   }
 
   const navItems = [
@@ -62,7 +92,7 @@
         </nav>
 
         <div class="header-rechts">
-          <div class="gebruiker-chip">
+          <button class="gebruiker-chip" on:click={openWachtwoordModal} title="Wachtwoord wijzigen">
             <div class="gebruiker-avatar">{$sessie.gebruikersnaam[0].toUpperCase()}</div>
             <div class="gebruiker-info">
               <span class="gebruiker-naam">{$sessie.gebruikersnaam}</span>
@@ -70,7 +100,7 @@
                 {$sessie.rol === 'manager' ? '⭐ Manager' : '👤 Werknemer'}
               </span>
             </div>
-          </div>
+          </button>
           <button class="uitlog-knop" on:click={uitloggen} title="Uitloggen">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -106,6 +136,48 @@
     </footer>
 
   </div>
+
+  {#if toonWachtwoordModal}
+    <div class="modal-overlay" on:click|self={() => toonWachtwoordModal = false}>
+      <div class="modal-kaart">
+        <div class="modal-header">
+          <h2 class="modal-titel">Wachtwoord wijzigen</h2>
+          <button class="modal-sluit" on:click={() => toonWachtwoordModal = false}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        {#if wachtwoordSucces}
+          <div class="modal-succes">
+            <span class="succes-icoon">✓</span>
+            Wachtwoord succesvol gewijzigd!
+          </div>
+        {:else}
+          <div class="modal-body">
+            <label class="veld-label">
+              Huidig wachtwoord
+              <input type="password" bind:value={huidigWachtwoord} placeholder="••••••••" />
+            </label>
+            <label class="veld-label">
+              Nieuw wachtwoord
+              <input type="password" bind:value={nieuwWachtwoord} placeholder="Minimaal 6 tekens" />
+            </label>
+            {#if wachtwoordFout}
+              <p class="fout-tekst">{wachtwoordFout}</p>
+            {/if}
+          </div>
+          <div class="modal-footer">
+            <button class="knop-annuleer" on:click={() => toonWachtwoordModal = false}>Annuleren</button>
+            <button class="knop-primair" on:click={handleWachtwoordWijzigen} disabled={wachtwoordLaden}>
+              {wachtwoordLaden ? 'Opslaan...' : 'Opslaan'}
+            </button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -367,6 +439,13 @@
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 10px;
     padding: 0.35rem 0.65rem 0.35rem 0.35rem;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+  }
+
+  .gebruiker-chip:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.2);
   }
 
   .gebruiker-avatar {
@@ -430,6 +509,122 @@
     margin-top: auto;
   }
   .footer-dot { color: var(--rand); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+  }
+
+  .modal-kaart {
+    background: var(--wit);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--schaduw-xl);
+    width: 100%;
+    max-width: 400px;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--rand);
+  }
+
+  .modal-titel {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    letter-spacing: 0.04em;
+    color: var(--donker);
+    margin: 0;
+  }
+
+  .modal-sluit {
+    background: var(--rand-licht);
+    border: 1px solid var(--rand);
+    border-radius: 8px;
+    padding: 0.35rem;
+    cursor: pointer;
+    color: var(--tekst-zacht);
+    display: flex;
+    align-items: center;
+    transition: all var(--transition);
+  }
+
+  .modal-sluit:hover { background: var(--rood-licht); color: var(--rood); border-color: var(--rood); }
+
+  .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+  .veld-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--tekst-zacht);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .fout-tekst { color: var(--rood); font-size: 0.82rem; font-weight: 600; }
+
+  .modal-footer {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--rand);
+    background: var(--rand-licht);
+  }
+
+  .knop-annuleer {
+    font-family: var(--font-body);
+    font-weight: 700;
+    padding: 0.7rem 1.25rem;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--rand);
+    background: var(--wit);
+    color: var(--tekst-zacht);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    flex: 1;
+  }
+
+  .knop-annuleer:hover { border-color: var(--tekst-zacht); color: var(--tekst); }
+
+  .modal-footer .knop-primair { flex: 1; }
+
+  .modal-succes {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem 1.5rem;
+    color: var(--groen);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .succes-icoon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--groen-licht);
+    border: 2px solid var(--groen-rand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
 
   /* ── Responsive ── */
   @media (max-width: 768px) {

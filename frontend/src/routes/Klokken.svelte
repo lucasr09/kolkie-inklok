@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { getMedewerkers, inklokken, uitklokken, getKlokslagen } from '../lib/api.js';
+  import { getMedewerkers, inklokken, uitklokken, getKlokslagen, startPauze, stopPauze, getNuIngeklokt } from '../lib/api.js';
   import { sessie, isManager } from '../stores.js';
 
   let medewerkers = [];
@@ -10,7 +10,9 @@
   let bericht = '';
   let berichtType = '';
   let ingeklokt = false;
+  let opPauze = false;
   let laden = false;
+  let nuAanwezig = [];
 
   let nu = new Date();
   let klokInterval;
@@ -23,7 +25,11 @@
     if (!$isManager && $sessie?.medewerker_id) {
       await kiesMedewerker($sessie.medewerker_id, $sessie.gebruikersnaam);
     }
-    klokInterval = setInterval(() => { nu = new Date(); }, 1000);
+    nuAanwezig = await getNuIngeklokt();
+    klokInterval = setInterval(async () => {
+      nu = new Date();
+      nuAanwezig = await getNuIngeklokt();
+    }, 30000);
   });
 
   onDestroy(() => clearInterval(klokInterval));
@@ -33,8 +39,18 @@
     gekozenNaam = naam;
     const data = await getKlokslagen(id);
     klokslagen = Array.isArray(data) ? data : [];
-    ingeklokt = klokslagen.length > 0 && !klokslagen[0].uitgeklokt_op;
+    const huidig = klokslagen[0];
+    ingeklokt = !!huidig && !huidig.uitgeklokt_op;
+    opPauze = ingeklokt && !!huidig?.pauze_start;
     bericht = '';
+  }
+
+  async function verversKlokslagen() {
+    const data = await getKlokslagen(gekozenId);
+    klokslagen = Array.isArray(data) ? data : [];
+    const huidig = klokslagen[0];
+    ingeklokt = !!huidig && !huidig.uitgeklokt_op;
+    opPauze = ingeklokt && !!huidig?.pauze_start;
   }
 
   async function handleKlok() {
@@ -43,18 +59,29 @@
     const res = ingeklokt ? await uitklokken(gekozenId) : await inklokken(gekozenId);
     bericht = res.bericht || (ingeklokt ? 'Uitgeklokt!' : 'Ingeklokt!');
     berichtType = res.status === 'ok' ? 'ok' : 'fout';
-    const data = await getKlokslagen(gekozenId);
-    klokslagen = Array.isArray(data) ? data : [];
-    ingeklokt = klokslagen.length > 0 && !klokslagen[0].uitgeklokt_op;
+    await verversKlokslagen();
+    nuAanwezig = await getNuIngeklokt();
+    laden = false;
+    setTimeout(() => bericht = '', 4000);
+  }
+
+  async function handlePauze() {
+    if (!gekozenId || laden) return;
+    laden = true;
+    const res = opPauze ? await stopPauze(gekozenId) : await startPauze(gekozenId);
+    bericht = res.bericht || (opPauze ? 'Pauze gestopt!' : 'Pauze gestart!');
+    berichtType = res.status === 'ok' ? 'ok' : 'fout';
+    await verversKlokslagen();
     laden = false;
     setTimeout(() => bericht = '', 4000);
   }
 
   function berekenUren(slag) {
     if (!slag.uitgeklokt_op) return null;
-    const ms = new Date(slag.uitgeklokt_op) - new Date(slag.ingeklokt_op);
-    const h = Math.floor(ms / 3600000);
-    const m = Math.floor((ms % 3600000) / 60000);
+    const brutoms = new Date(slag.uitgeklokt_op) - new Date(slag.ingeklokt_op);
+    const nettoms = brutoms - (slag.pauze_totaal_ms || 0);
+    const h = Math.floor(nettoms / 3600000);
+    const m = Math.floor((nettoms % 3600000) / 60000);
     return h > 0 ? `${h}u ${m}m` : `${m}m`;
   }
 
@@ -90,6 +117,29 @@
         </button>
       {/each}
     </div>
+
+    {#if nuAanwezig.length > 0}
+      <div class="nu-aanwezig-sectie">
+        <h2>Nu aan het werk</h2>
+        <div class="nu-aanwezig-lijst">
+          {#each nuAanwezig as p}
+            <div class="nu-aanwezig-kaart" class:op-pauze={!!p.pauze_start}>
+              <div class="status-dot-klein" class:pauze={!!p.pauze_start}></div>
+              <div class="na-avatar" style="background: {avatarKleur(p.medewerker_id)}">{p.naam[0].toUpperCase()}</div>
+              <div class="na-info">
+                <span class="na-naam">{p.naam}</span>
+                <span class="na-tijd">Ingeklokt {formatTijd(p.ingeklokt_op)}</span>
+              </div>
+              {#if p.pauze_start}
+                <span class="na-badge pauze">☕ Pauze</span>
+              {:else}
+                <span class="na-badge bezig">Bezig</span>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
   </div>
 
 {:else}
@@ -148,6 +198,17 @@
         <span class="klok-knop-tekst">{ingeklokt ? 'Uitklokken' : 'Inklokken'}</span>
       {/if}
     </button>
+
+    <!-- Pauze knop -->
+    {#if ingeklokt}
+      <button class="pauze-knop" class:stoppen={opPauze} on:click={handlePauze} disabled={laden}>
+        {#if opPauze}
+          ▶ Pauze beëindigen
+        {:else}
+          ☕ Pauze nemen
+        {/if}
+      </button>
+    {/if}
 
     <!-- Feedback bericht -->
     {#if bericht}
@@ -560,6 +621,105 @@
     margin-left: auto;
     flex-shrink: 0;
   }
+
+  /* Pauze knop */
+  .pauze-knop {
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 2px solid #d97706;
+    background: var(--goud-licht);
+    color: #92400e;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all var(--transition);
+    letter-spacing: 0.02em;
+  }
+
+  .pauze-knop:hover:not(:disabled) {
+    background: #fef3c7;
+    border-color: #b45309;
+    transform: translateY(-1px);
+  }
+
+  .pauze-knop.stoppen {
+    background: #f0fdf4;
+    border-color: var(--groen);
+    color: #166534;
+  }
+
+  .pauze-knop.stoppen:hover:not(:disabled) {
+    background: #dcfce7;
+    border-color: #15803d;
+  }
+
+  .pauze-knop:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* Nu aanwezig sectie (kies-scherm) */
+  .nu-aanwezig-sectie { margin-top: 2rem; }
+  .nu-aanwezig-lijst { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .nu-aanwezig-kaart {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--wit);
+    border: 1.5px solid var(--groen-rand);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem 1rem;
+    box-shadow: var(--schaduw-xs);
+  }
+
+  .nu-aanwezig-kaart.op-pauze {
+    border-color: #fde68a;
+    background: #fffbeb;
+  }
+
+  .status-dot-klein {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--groen);
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(22,163,74,0.15);
+  }
+
+  .status-dot-klein.pauze {
+    background: var(--goud);
+    box-shadow: 0 0 0 3px rgba(217,119,6,0.15);
+  }
+
+  .na-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    flex-shrink: 0;
+  }
+
+  .na-info { display: flex; flex-direction: column; flex: 1; }
+  .na-naam { font-weight: 800; font-size: 0.9rem; color: var(--donker); }
+  .na-tijd { font-size: 0.72rem; color: var(--tekst-zacht); }
+
+  .na-badge {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .na-badge.bezig { background: var(--groen-licht); color: var(--groen); border: 1px solid var(--groen-rand); }
+  .na-badge.pauze { background: var(--goud-licht); color: var(--goud); border: 1px solid #fde68a; }
 
   @media (max-width: 480px) {
     .medewerker-grid { grid-template-columns: repeat(2, 1fr); }

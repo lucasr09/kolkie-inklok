@@ -35,6 +35,8 @@ pub fn init() -> Result<()> {
             medewerker_id INTEGER NOT NULL,
             ingeklokt_op TEXT NOT NULL,
             uitgeklokt_op TEXT,
+            pauze_start TEXT,
+            pauze_totaal_ms INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (medewerker_id) REFERENCES medewerkers(id)
         );
 
@@ -47,6 +49,10 @@ pub fn init() -> Result<()> {
             FOREIGN KEY (medewerker_id) REFERENCES medewerkers(id)
         );
     ")?;
+
+    // Migratie: pauze kolommen toevoegen aan bestaande databases
+    let _ = conn.execute("ALTER TABLE klokslagen ADD COLUMN pauze_start TEXT", []);
+    let _ = conn.execute("ALTER TABLE klokslagen ADD COLUMN pauze_totaal_ms INTEGER NOT NULL DEFAULT 0", []);
 
     // Seed standaard admin als er nog geen manager-account bestaat
     let manager_count: i64 = conn.query_row(

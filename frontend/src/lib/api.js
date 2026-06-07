@@ -28,6 +28,22 @@ export async function inloggen(gebruikersnaam, wachtwoord) {
     return res.json();
 }
 
+export async function uitloggen() {
+    const t = token();
+    if (t) {
+        await fetch(`${BASE}/uitloggen?token=${t}`, { method: 'POST' });
+    }
+}
+
+export async function wijzigWachtwoord(huidig, nieuw) {
+    const res = await fetch(authUrl('/wachtwoord'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ huidig, nieuw }),
+    });
+    return res.json();
+}
+
 // Medewerkers
 export async function getMedewerkers() {
     const res = await fetch(authUrl('/medewerkers'));
@@ -64,6 +80,29 @@ export async function uitklokken(medewerker_id) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ medewerker_id }),
     });
+    return res.json();
+}
+
+export async function startPauze(medewerker_id) {
+    const res = await fetch(authUrl('/pauze/starten'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ medewerker_id }),
+    });
+    return res.json();
+}
+
+export async function stopPauze(medewerker_id) {
+    const res = await fetch(authUrl('/pauze/stoppen'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ medewerker_id }),
+    });
+    return res.json();
+}
+
+export async function getNuIngeklokt() {
+    const res = await fetch(authUrl('/nu-ingeklokt'));
     return res.json();
 }
 

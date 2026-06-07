@@ -84,7 +84,6 @@
           {/if}
         </button>
       </div>
-      <p class="hint">Standaard admin: <strong>admin</strong> / <strong>admin123</strong></p>
     {:else}
       <div class="form">
         <label class="form-veld">
@@ -312,13 +311,6 @@
   }
 
   @keyframes draaien { to { transform: rotate(360deg); } }
-
-  .hint {
-    text-align: center;
-    font-size: 0.78rem;
-    color: var(--tekst-zacht);
-    margin-top: 1.25rem;
-  }
 
   @media (max-width: 480px) {
     .login-kaart { padding: 2rem 1.5rem; border-radius: 20px; }

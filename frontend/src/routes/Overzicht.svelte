@@ -1,10 +1,11 @@
 <script>
   import { onMount } from 'svelte';
-  import { getAlleKlokslagen, getRooster, getMedewerkers } from '../lib/api.js';
+  import { getAlleKlokslagen, getRooster, getMedewerkers, getNuIngeklokt } from '../lib/api.js';
 
   let klokslagen = [];
   let rooster = [];
   let medewerkers = [];
+  let nuAanwezig = [];
   let gekozenWeek = huidigeMaandag();
   let laden = true;
 
@@ -45,8 +46,8 @@
   $: isHuidigeWeek = datumStr(gekozenWeek) === datumStr(huidigeMaandag());
 
   onMount(async () => {
-    [klokslagen, rooster, medewerkers] = await Promise.all([
-      getAlleKlokslagen(), getRooster(), getMedewerkers()
+    [klokslagen, rooster, medewerkers, nuAanwezig] = await Promise.all([
+      getAlleKlokslagen(), getRooster(), getMedewerkers(), getNuIngeklokt()
     ]);
     laden = false;
   });
@@ -183,6 +184,27 @@
   }
 </script>
 
+{#if nuAanwezig.length > 0}
+  <div class="nu-aanwezig-banner kaart">
+    <div class="nu-aanwezig-titel">
+      <div class="live-dot"></div>
+      <span>Nu aan het werk</span>
+      <span class="na-count">{nuAanwezig.length}</span>
+    </div>
+    <div class="na-personen">
+      {#each nuAanwezig as p}
+        <div class="na-persoon" class:op-pauze={!!p.pauze_start}>
+          <div class="na-avatar" style="background: {avatarKleur(p.medewerker_id)}">{p.naam[0]}</div>
+          <div class="na-tekst">
+            <span class="na-naam">{p.naam}</span>
+            <span class="na-sub">{p.pauze_start ? '☕ Pauze' : `Sinds ${tijdStr(p.ingeklokt_op)}`}</span>
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
+{/if}
+
 <div class="pagina-header">
   <h1>Urenoverzicht</h1>
   <button class="export-knop" on:click={exporteerExcel}>
@@ -309,6 +331,91 @@
 {/if}
 
 <style>
+  /* Nu aanwezig banner */
+  .nu-aanwezig-banner {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .nu-aanwezig-titel {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--tekst-zacht);
+    margin-bottom: 0.85rem;
+  }
+
+  .live-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--groen);
+    box-shadow: 0 0 0 3px rgba(22,163,74,0.2);
+    flex-shrink: 0;
+    animation: puls-dot 2s ease-out infinite;
+  }
+
+  @keyframes puls-dot {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
+    50% { box-shadow: 0 0 0 6px rgba(22,163,74,0.08); }
+  }
+
+  .na-count {
+    background: var(--groen);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 900;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .na-personen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .na-persoon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--groen-licht);
+    border: 1.5px solid var(--groen-rand);
+    border-radius: 10px;
+    padding: 0.45rem 0.75rem 0.45rem 0.45rem;
+  }
+
+  .na-persoon.op-pauze {
+    background: var(--goud-licht);
+    border-color: #fde68a;
+  }
+
+  .na-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.88rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    flex-shrink: 0;
+  }
+
+  .na-tekst { display: flex; flex-direction: column; line-height: 1.2; }
+  .na-naam { font-weight: 800; font-size: 0.82rem; color: var(--donker); }
+  .na-sub { font-size: 0.68rem; color: var(--tekst-zacht); }
+
   .pagina-header {
     display: flex;
     align-items: center;

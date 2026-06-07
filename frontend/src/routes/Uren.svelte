@@ -64,9 +64,10 @@
 
   function berekenUren(k) {
     if (!k.uitgeklokt_op) return null;
-    const ms = new Date(k.uitgeklokt_op) - new Date(k.ingeklokt_op);
-    const h = Math.floor(ms / 3600000);
-    const m = Math.floor((ms % 3600000) / 60000);
+    const brutoms = new Date(k.uitgeklokt_op) - new Date(k.ingeklokt_op);
+    const nettoms = brutoms - (k.pauze_totaal_ms || 0);
+    const h = Math.floor(nettoms / 3600000);
+    const m = Math.floor((nettoms % 3600000) / 60000);
     return h > 0 ? `${h}u ${m}m` : `${m}m`;
   }
 

@@ -1,8 +1,7 @@
 use rocket::serde::json::Json;
 use rocket::http::Status;
 use crate::db::verbinding;
-use crate::models::{RegistrerenBody, InloggenBody, Gebruiker};
-
+use crate::models::{RegistrerenBody, InloggenBody, WachtwoordBody, Gebruiker};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use uuid::Uuid;
 use chrono::Local;
@@ -124,7 +123,55 @@ pub fn inloggen(body: Json<InloggenBody>) -> (Status, Json<serde_json::Value>) {
     })))
 }
 
-#[post("/uitloggen")]
-pub fn uitloggen() -> Json<serde_json::Value> {
+#[post("/uitloggen?<token>")]
+pub fn uitloggen(token: Option<String>) -> Json<serde_json::Value> {
+    if let Some(t) = token {
+        if let Ok(conn) = verbinding() {
+            let _ = conn.execute("DELETE FROM sessies WHERE token = ?1", [&t]);
+        }
+    }
     Json(serde_json::json!({ "status": "ok" }))
+}
+
+#[post("/wachtwoord?<token>", data = "<body>")]
+pub fn wachtwoord_wijzigen(token: Option<String>, body: Json<WachtwoordBody>) -> (Status, Json<serde_json::Value>) {
+    let gebruiker = match check_auth(token.as_deref(), None) {
+        Ok(g) => g,
+        Err(s) => return (s, Json(serde_json::json!({ "status": "fout", "bericht": "Niet ingelogd" }))),
+    };
+
+    let conn = match verbinding() {
+        Ok(c) => c,
+        Err(_) => return (Status::InternalServerError, Json(serde_json::json!({ "status": "fout" }))),
+    };
+
+    let huidig_hash: String = conn.query_row(
+        "SELECT wachtwoord_hash FROM gebruikers WHERE id = ?1",
+        [gebruiker.id],
+        |row| row.get(0),
+    ).unwrap_or_default();
+
+    if !verify(&body.huidig, &huidig_hash).unwrap_or(false) {
+        return (Status::Unauthorized, Json(serde_json::json!({
+            "status": "fout", "bericht": "Huidig wachtwoord klopt niet"
+        })));
+    }
+
+    if body.nieuw.len() < 6 {
+        return (Status::BadRequest, Json(serde_json::json!({
+            "status": "fout", "bericht": "Nieuw wachtwoord moet minimaal 6 tekens zijn"
+        })));
+    }
+
+    let nieuw_hash = match hash(&body.nieuw, DEFAULT_COST) {
+        Ok(h) => h,
+        Err(_) => return (Status::InternalServerError, Json(serde_json::json!({ "status": "fout" }))),
+    };
+
+    conn.execute(
+        "UPDATE gebruikers SET wachtwoord_hash = ?1 WHERE id = ?2",
+        rusqlite::params![nieuw_hash, gebruiker.id],
+    ).unwrap();
+
+    (Status::Ok, Json(serde_json::json!({ "status": "ok" })))
 }
