@@ -3,8 +3,6 @@
   import { inklokken, uitklokken, getKlokslagen, startPauze, stopPauze } from '../lib/api.js';
   import { sessie } from '../stores.js';
 
-  let gekozenId = $sessie?.medewerker_id ?? null;
-  let gekozenNaam = $sessie?.gebruikersnaam ?? '';
   let klokslagen = [];
   let bericht = '';
   let berichtType = '';
@@ -18,14 +16,12 @@
   const kleuren = ['#dc2626','#2563eb','#059669','#d97706','#7c3aed','#db2777'];
   function avatarKleur(id) { return kleuren[(id ?? 0) % kleuren.length]; }
 
-  onMount(async () => {
-    if (gekozenId) {
-      const data = await getKlokslagen(gekozenId);
-      klokslagen = Array.isArray(data) ? data : [];
-      const huidig = klokslagen[0];
-      ingeklokt = !!huidig && !huidig.uitgeklokt_op;
-      opPauze = ingeklokt && !!huidig?.pauze_start;
-    }
+  $: gekozenId = $sessie?.medewerker_id ?? null;
+  $: gekozenNaam = $sessie?.gebruikersnaam ?? '';
+
+  $: if (gekozenId) verversKlokslagen();
+
+  onMount(() => {
     klokInterval = setInterval(() => { nu = new Date(); }, 1000);
   });
 
