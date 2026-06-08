@@ -44,7 +44,6 @@
     bericht = res.bericht || (ingeklokt ? 'Uitgeklokt!' : 'Ingeklokt!');
     berichtType = res.status === 'ok' ? 'ok' : 'fout';
     await verversKlokslagen();
-    nuAanwezig = await getNuIngeklokt();
     laden = false;
     setTimeout(() => bericht = '', 4000);
   }
