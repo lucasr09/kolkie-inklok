@@ -3,8 +3,8 @@
   import { inklokken, uitklokken, getKlokslagen, startPauze, stopPauze } from '../lib/api.js';
   import { sessie } from '../stores.js';
 
-  let gekozenId = null;
-  let gekozenNaam = '';
+  let gekozenId = $sessie?.medewerker_id ?? null;
+  let gekozenNaam = $sessie?.gebruikersnaam ?? '';
   let klokslagen = [];
   let bericht = '';
   let berichtType = '';
@@ -19,8 +19,12 @@
   function avatarKleur(id) { return kleuren[(id ?? 0) % kleuren.length]; }
 
   onMount(async () => {
-    if ($sessie?.medewerker_id) {
-      await kiesMedewerker($sessie.medewerker_id, $sessie.gebruikersnaam);
+    if (gekozenId) {
+      const data = await getKlokslagen(gekozenId);
+      klokslagen = Array.isArray(data) ? data : [];
+      const huidig = klokslagen[0];
+      ingeklokt = !!huidig && !huidig.uitgeklokt_op;
+      opPauze = ingeklokt && !!huidig?.pauze_start;
     }
     klokInterval = setInterval(() => { nu = new Date(); }, 1000);
   });
@@ -28,17 +32,6 @@
   onDestroy(() => {
     clearInterval(klokInterval);
   });
-
-  async function kiesMedewerker(id, naam) {
-    gekozenId = id;
-    gekozenNaam = naam;
-    const data = await getKlokslagen(id);
-    klokslagen = Array.isArray(data) ? data : [];
-    const huidig = klokslagen[0];
-    ingeklokt = !!huidig && !huidig.uitgeklokt_op;
-    opPauze = ingeklokt && !!huidig?.pauze_start;
-    bericht = '';
-  }
 
   async function verversKlokslagen() {
     const data = await getKlokslagen(gekozenId);
